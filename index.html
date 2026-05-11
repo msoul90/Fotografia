@@ -3,101 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fotografía: Workshop Pro</title>
+    <title>Masterclass Fotografía: Sony & Samsung</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .card-checkbox:checked + label { text-decoration: line-through; opacity: 0.5; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .active-tab { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
     </style>
 </head>
-<body class="bg-gray-50 p-4 md:p-8 font-sans">
-    <div class="max-w-3xl mx-auto">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">STUDIO DASHBOARD</h1>
-            <p class="text-gray-500 mt-1 uppercase text-xs tracking-widest font-semibold">Sony a6000 + S24 Ultra Edition</p>
-            
-            <div class="mt-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-end mb-2">
-                    <span class="text-xs font-bold text-gray-400 uppercase">Progreso Total</span>
-                    <span id="progress-text" class="text-2xl font-black text-blue-600">0%</span>
+<body class="bg-slate-50 font-sans text-slate-900">
+
+    <div class="max-w-2xl mx-auto pb-20">
+        <header class="bg-white border-b border-slate-200 p-6 sticky top-0 z-40 shadow-sm">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-black tracking-tighter">FOTO_LAB v3</h1>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">A6000 + S24 Ultra</p>
                 </div>
-                <div class="w-full bg-gray-100 rounded-full h-2">
-                    <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-700" style="width: 0%"></div>
+                <div class="text-right">
+                    <span id="progress-text" class="text-2xl font-black text-blue-600">0%</span>
+                    <div class="w-24 bg-slate-100 h-1.5 rounded-full mt-1">
+                        <div id="progress-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <div class="flex space-x-8 border-b border-gray-200 mb-8 justify-center">
-            <button onclick="openTab('teoria')" id="tab-teoria" class="pb-2 font-bold text-sm uppercase tracking-wider active-tab">Currícula</button>
-            <button onclick="openTab('retos')" id="tab-retos" class="pb-2 font-bold text-sm uppercase tracking-wider text-gray-400">Retos de Campo</button>
+        <nav class="flex justify-around bg-white p-4 border-b border-slate-200 mb-6">
+            <button onclick="openTab('curricula')" id="btn-curricula" class="text-xs font-bold uppercase tracking-wider active-tab pb-1">Lecciones</button>
+            <button onclick="openTab('retos')" id="btn-retos" class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-1">Retos de Campo</button>
+        </nav>
+
+        <div id="curricula" class="tab-content active px-4 space-y-6">
+            
+            <div class="space-y-3">
+                <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Módulo 1: Control de Hardware</h2>
+                <div class="grid gap-3">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="c1" class="card-checkbox h-5 w-5 mr-3 accent-blue-600" onchange="updateProgress()">
+                            <label for="c1" class="text-sm font-medium">El Histograma Real</label>
+                        </div>
+                        <button onclick="showModal('m1')" class="text-blue-500 text-xs font-bold">INFO</button>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="c2" class="card-checkbox h-5 w-5 mr-3 accent-blue-600" onchange="updateProgress()">
+                            <label for="c2" class="text-sm font-medium">Punto Dulce del Lente Kit</label>
+                        </div>
+                        <button onclick="showModal('m2')" class="text-blue-500 text-xs font-bold">INFO</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Módulo 2: Composición Avanzada</h2>
+                <div class="grid gap-3">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="c3" class="card-checkbox h-5 w-5 mr-3 accent-blue-600" onchange="updateProgress()">
+                            <label for="c3" class="text-sm font-medium">Ley de la Inversa del Cuadrado</label>
+                        </div>
+                        <button onclick="showModal('m3')" class="text-blue-500 text-xs font-bold">INFO</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="teoria" class="tab-content active space-y-4">
-            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                <h3 class="font-black text-gray-800 mb-3 flex items-center">
-                    <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span> Módulo: Color y Percepción
-                </h3>
-                <ul class="space-y-3">
-                    <li class="flex items-start">
-                        <input type="checkbox" id="l1" class="card-checkbox mt-1 mr-3 h-4 w-4" onchange="updateProgress()">
-                        <label for="l1" class="text-gray-600 text-sm">Lección: Cómo el sensor CMOS de la Sony interpreta el canal azul/rojo.</label>
-                    </li>
-                    <li class="flex items-start">
-                        <input type="checkbox" id="l2" class="card-checkbox mt-1 mr-3 h-4 w-4" onchange="updateProgress()">
-                        <label for="l2" class="text-gray-600 text-sm">Configuración: Crear un "Perfil de Color" personalizado en la cámara.</label>
-                    </li>
-                </ul>
+        <div id="retos" class="tab-content px-4 space-y-4">
+            <div class="bg-purple-600 p-6 rounded-2xl text-white shadow-lg shadow-purple-200">
+                <div class="flex justify-between items-start">
+                    <span class="text-3xl">🔮</span>
+                    <input type="checkbox" id="r1" class="card-checkbox h-6 w-6 accent-white" onchange="updateProgress()">
+                </div>
+                <h3 class="font-black text-lg mt-2 italic">CAZADOR MORADO</h3>
+                <p class="text-purple-100 text-xs mt-1">Busca 3 objetos de color morado intenso. Nota como el S24 intenta saturarlos y la Sony los mantiene apagados. Edita ambos para igualar.</p>
             </div>
-            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                <h3 class="font-black text-gray-800 mb-3 flex items-center">
-                    <span class="w-2 h-2 bg-gray-800 rounded-full mr-2"></span> Módulo: Luz y Sombra
-                </h3>
-                <ul class="space-y-3">
-                    <li class="flex items-start">
-                        <input type="checkbox" id="l3" class="card-checkbox mt-1 mr-3 h-4 w-4" onchange="updateProgress()">
-                        <label for="l3" class="text-gray-600 text-sm">Lección: Histogramas. Cómo leer la gráfica para no "quemar" blancos.</label>
-                    </li>
-                </ul>
-            </div>
-        </div>
 
-        <div id="retos" class="tab-content space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-purple-50 p-5 rounded-2xl border border-purple-100">
-                    <span class="text-[2rem] mb-2 block">🔮</span>
-                    <h4 class="font-bold text-purple-900">Cazador Morado</h4>
-                    <p class="text-purple-700 text-xs mb-4">Captura 3 objetos morados. Uno debe ser con luz natural y otro con luz de tungsteno.</p>
-                    <input type="checkbox" id="r1" class="card-checkbox h-5 w-5" onchange="updateProgress()">
+            <div class="bg-slate-900 p-6 rounded-2xl text-white">
+                <div class="flex justify-between items-start">
+                    <span class="text-3xl">🌓</span>
+                    <input type="checkbox" id="r2" class="card-checkbox h-6 w-6 accent-blue-500" onchange="updateProgress()">
                 </div>
-                <div class="bg-gray-900 p-5 rounded-2xl">
-                    <span class="text-[2rem] mb-2 block">👤</span>
-                    <h4 class="font-bold text-white">Siluetas Urbanas</h4>
-                    <p class="text-gray-400 text-xs mb-4">Usa la Sony a6000 en compensación de exposición -2.0 para crear una silueta perfecta.</p>
-                    <input type="checkbox" id="r2" class="card-checkbox h-5 w-5 accent-blue-500" onchange="updateProgress()">
+                <h3 class="font-black text-lg mt-2 italic">MINIMALISMO URBANO</h3>
+                <p class="text-slate-400 text-xs mt-1">Encuentra una pared lisa con una sola sombra. Usa el zoom 3x del S24 Ultra para comprimir la perspectiva.</p>
+            </div>
+
+            <div class="bg-emerald-600 p-6 rounded-2xl text-white">
+                <div class="flex justify-between items-start">
+                    <span class="text-3xl">🔍</span>
+                    <input type="checkbox" id="r3" class="card-checkbox h-6 w-6" onchange="updateProgress()">
                 </div>
+                <h3 class="font-black text-lg mt-2 italic">MACRO ENGAÑOSO</h3>
+                <p class="text-emerald-100 text-xs mt-1">Usa el lente de kit a 16mm y acércate a 5cm de una textura. Compara la nitidez en las esquinas contra el S24.</p>
             </div>
         </div>
     </div>
 
+    <div id="info-modal" class="modal" onclick="closeModal()">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl" onclick="event.stopPropagation()">
+            <h2 id="modal-title" class="text-2xl font-black mb-4 italic text-slate-800"></h2>
+            <div id="modal-body" class="text-slate-600 text-sm leading-relaxed space-y-4"></div>
+            <button onclick="closeModal()" class="mt-8 w-full bg-slate-900 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest">Entendido</button>
+        </div>
+    </div>
+
     <script>
-        function openTab(tabId) {
+        const lecciones = {
+            m1: {
+                title: "EL HISTOGRAMA",
+                body: "En tu Sony a6000, activa el histograma en pantalla. No confíes en el brillo de la pantalla LCD, especialmente bajo el sol. <b>Regla de oro:</b> Si la montaña del gráfico toca el borde derecho, estás perdiendo información en los blancos (quemados). Si toca el izquierdo, pierdes detalle en sombras."
+            },
+            m2: {
+                title: "PUNTO DULCE",
+                body: "El lente 16-50mm no es igual de nítido en todas sus aperturas. Prueba disparar a <b>f/8</b> en 24mm. Notarás que el centro y las esquinas tienen mucha más definición que si disparas a f/3.5."
+            },
+            m3: {
+                title: "LEY INVERSA",
+                body: "Si usas una fuente de luz (una lámpara o ventana), recuerda: si duplicas la distancia entre el sujeto y la luz, la intensidad no baja a la mitad, ¡baja a la cuarta parte! Úsalo para crear sombras dramáticas alejando al sujeto de la pared."
+            }
+        };
+
+        function showModal(id) {
+            document.getElementById('modal-title').innerHTML = lecciones[id].title;
+            document.getElementById('modal-body').innerHTML = lecciones[id].body;
+            document.getElementById('info-modal').classList.add('active');
+        }
+
+        function closeModal() { document.getElementById('info-modal').classList.remove('active'); }
+
+        function openTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('button').forEach(b => b.classList.remove('active-tab', 'text-gray-400'));
-            
-            document.getElementById(tabId).classList.add('active');
-            document.getElementById('tab-' + tabId).classList.add('active-tab');
-            if(tabId === 'teoria') document.getElementById('tab-retos').classList.add('text-gray-400');
-            else document.getElementById('tab-teoria').classList.add('text-gray-400');
+            document.getElementById(tab).classList.add('active');
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab', 'text-blue-600'));
+            document.getElementById('btn-' + tab).classList.add('active-tab', 'text-blue-600');
         }
 
         function updateProgress() {
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            const checked = Array.from(checkboxes).filter(c => c.checked).length;
-            const percentage = Math.round((checked / checkboxes.length) * 100);
-            document.getElementById('progress-bar').style.width = percentage + '%';
-            document.getElementById('progress-text').innerText = percentage + '%';
+            const checks = document.querySelectorAll('input[type="checkbox"]');
+            const checked = Array.from(checks).filter(c => c.checked).length;
+            const progress = Math.round((checked / checks.length) * 100);
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('progress-text').innerText = progress + '%';
         }
     </script>
 </body>
