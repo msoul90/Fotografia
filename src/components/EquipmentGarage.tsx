@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePhotoStore, useHardware } from "@/store/photoStore";
 import { Camera, Smartphone, X, ChevronRight, Wrench, Star, Zap, CheckCircle2 } from "lucide-react";
@@ -239,7 +240,7 @@ export function EquipmentGarage() {
         model,
         sensorSize: "APS-C", // Default
         cropFactor: 1.5,
-        mountType: "Generic",
+        mountType: "Unknown",
         mechanicalShutterMaxSec: 1 / 4000,
         bodyStabilization: "None",
         isoMin: 100,
@@ -252,8 +253,9 @@ export function EquipmentGarage() {
             name: "Lente Kit 35mm",
             focalLengthMm: 35,
             maxAperture: 1.8,
+            minAperture: 22,
             stabilization: "None",
-            mountType: "Generic",
+            mountType: "Unknown",
           },
         ],
         activeLensId: `${id}-lens-1`,

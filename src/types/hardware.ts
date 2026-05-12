@@ -22,7 +22,8 @@ export type MountType =
   | "MFT"
   | "Fuji-X"
   | "Leica-M"
-  | "Fixed"; // smartphones & fixed-lens cameras
+  | "Fixed"    // smartphones & fixed-lens cameras
+  | "Unknown"; // user-created profiles via UI where mount is not specified
 
 export type StabilizationType = "None" | "OIS" | "IBIS" | "OIS+IBIS";
 
