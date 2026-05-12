@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePhotoStore, useHardware } from "@/store/photoStore";
 import { Camera, Smartphone, X, ChevronRight, Wrench, Star, Zap, CheckCircle2 } from "lucide-react";
 import { isOpticalCamera, isSmartDevice } from "@/types/hardware";
-import type { HardwareProfile, OpticalCamera, SmartDevice, EquipmentKit } from "@/types/hardware";
+import type { HardwareProfile, OpticalCamera, SmartDevice, EquipmentKit, Lens, SmartLens } from "@/types/hardware";
 import { BUILTIN_PROFILES } from "@/data/hardware";
 
 // ─── Profile Card ─────────────────────────────────────────────────────────────
@@ -90,42 +90,119 @@ function ProfileCard({
 // ─── Lens Selector (for OpticalCamera) ───────────────────────────────────────
 
 function LensSelector({ profile }: { profile: OpticalCamera }) {
-  const { setActiveLens } = usePhotoStore();
+  const { setActiveLens, saveProfile } = usePhotoStore();
+  const [isAdding, setIsAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [focal, setFocal] = useState("35");
+  const [aperture, setAperture] = useState("1.8");
+
+  const handleAdd = async () => {
+    const newLens: Lens = {
+      kind: "Prime",
+      id: `lens-${Date.now()}`,
+      brand: profile.brand,
+      name: name || `${focal}mm f/${aperture}`,
+      focalLengthMm: Number(focal),
+      maxAperture: Number(aperture),
+      minAperture: 22,
+      stabilization: "None",
+      mountType: profile.mountType,
+    };
+
+    const updated = { ...profile, lenses: [...profile.lenses, newLens] };
+    await saveProfile(updated);
+    setIsAdding(false);
+    setName("");
+  };
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-        Lente Activo
-      </p>
-      {profile.lenses.map((lens) => {
-        const isActive = lens.id === profile.activeLensId;
-        const label =
-          lens.kind === "Prime"
-            ? `${lens.focalLengthMm}mm f/${lens.maxAperture}`
-            : `${lens.focalLengthMinMm}-${lens.focalLengthMaxMm}mm f/${lens.maxApertureWide}-${lens.maxApertureTele}`;
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+          Lentes Disponibles
+        </p>
+        <button
+          onClick={() => setIsAdding(!isAdding)}
+          className="text-[9px] font-bold text-blue-400 hover:text-blue-300"
+        >
+          {isAdding ? "Cancelar" : "+ Añadir Lente"}
+        </button>
+      </div>
 
-        return (
-          <button
-            key={lens.id}
-            onClick={() => setActiveLens(lens.id)}
-            className={`w-full rounded-xl border px-3 py-2.5 text-left transition-all ${
-              isActive
-                ? "border-blue-500/40 bg-blue-500/10"
-                : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-600"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-white">{lens.name}</p>
-                <p className="text-[10px] text-zinc-500">
-                  {label} · {lens.stabilization !== "None" ? `${lens.stabilization} ✓` : "Sin OIS"}
-                </p>
-              </div>
-              {isActive && <CheckCircle2 className="h-4 w-4 text-blue-400" />}
+      {isAdding && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3"
+        >
+          <input
+            type="text"
+            placeholder="Nombre (ej. 50mm f/1.8)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full bg-transparent text-xs text-white outline-none placeholder:text-zinc-600"
+          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <p className="mb-1 text-[8px] font-bold text-zinc-500">Focal (mm)</p>
+              <input
+                type="number"
+                value={focal}
+                onChange={(e) => setFocal(e.target.value)}
+                className="w-full rounded bg-zinc-900 p-1.5 text-xs text-white outline-none"
+              />
             </div>
+            <div className="flex-1">
+              <p className="mb-1 text-[8px] font-bold text-zinc-500">Apertura (f/)</p>
+              <input
+                type="number"
+                step="0.1"
+                value={aperture}
+                onChange={(e) => setAperture(e.target.value)}
+                className="w-full rounded bg-zinc-900 p-1.5 text-xs text-white outline-none"
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleAdd}
+            className="w-full rounded bg-blue-600 py-1.5 text-[10px] font-bold text-white"
+          >
+            Guardar Lente
           </button>
-        );
-      })}
+        </motion.div>
+      )}
+
+      <div className="space-y-2">
+        {profile.lenses.map((lens) => {
+          const isActive = lens.id === profile.activeLensId;
+          const label =
+            lens.kind === "Prime"
+              ? `${lens.focalLengthMm}mm f/${lens.maxAperture}`
+              : `${lens.focalLengthMinMm}-${lens.focalLengthMaxMm}mm f/${lens.maxApertureWide}-${lens.maxApertureTele}`;
+
+          return (
+            <button
+              key={lens.id}
+              onClick={() => setActiveLens(lens.id)}
+              className={`w-full rounded-xl border px-3 py-2.5 text-left transition-all ${
+                isActive
+                  ? "border-blue-500/40 bg-blue-500/10"
+                  : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-600"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-white">{lens.name}</p>
+                  <p className="text-[10px] text-zinc-500">
+                    {label} · {lens.stabilization !== "None" ? `${lens.stabilization} ✓` : "Sin OIS"}
+                  </p>
+                </div>
+                {isActive && <CheckCircle2 className="h-4 w-4 text-blue-400" />}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -133,13 +210,79 @@ function LensSelector({ profile }: { profile: OpticalCamera }) {
 // ─── Smart Lens Selector ──────────────────────────────────────────────────────
 
 function SmartLensSelector({ profile }: { profile: SmartDevice }) {
-  const { setActiveLens } = usePhotoStore();
+  const { setActiveLens, saveProfile } = usePhotoStore();
+  const [isAdding, setIsAdding] = useState(false);
+  const [zoom, setZoom] = useState("2");
+  const [equiv, setEquiv] = useState("50");
+
+  const handleAdd = async () => {
+    const newLens: SmartLens = {
+      id: `smart-lens-${Date.now()}`,
+      name: `${zoom}x Tele`,
+      focalLengthReal: 10,
+      focalLengthEquivalent: Number(equiv),
+      aperture: 2.4,
+      zoomMultiplier: Number(zoom),
+      stabilization: "OIS",
+      megapixels: 12,
+      supportsNightMode: true,
+    };
+
+    const updated = { ...profile, sensorArray: [...profile.sensorArray, newLens] };
+    await saveProfile(updated);
+    setIsAdding(false);
+  };
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-        Lente Activo
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+          Sensores / Lentes
+        </p>
+        <button
+          onClick={() => setIsAdding(!isAdding)}
+          className="text-[9px] font-bold text-purple-400 hover:text-purple-300"
+        >
+          {isAdding ? "Cancelar" : "+ Añadir Sensor"}
+        </button>
+      </div>
+
+      {isAdding && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-2 rounded-xl border border-purple-500/20 bg-purple-500/5 p-3"
+        >
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <p className="mb-1 text-[8px] font-bold text-zinc-500">Zoom (x)</p>
+              <input
+                type="number"
+                step="0.1"
+                value={zoom}
+                onChange={(e) => setZoom(e.target.value)}
+                className="w-full rounded bg-zinc-900 p-1.5 text-xs text-white outline-none"
+              />
+            </div>
+            <div className="flex-1">
+              <p className="mb-1 text-[8px] font-bold text-zinc-500">Equiv. (mm)</p>
+              <input
+                type="number"
+                value={equiv}
+                onChange={(e) => setEquiv(e.target.value)}
+                className="w-full rounded bg-zinc-900 p-1.5 text-xs text-white outline-none"
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleAdd}
+            className="w-full rounded bg-purple-600 py-1.5 text-[10px] font-bold text-white"
+          >
+            Guardar Sensor
+          </button>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-2 gap-2">
         {profile.sensorArray.map((lens) => {
           const isActive = lens.id === profile.activeLensId;
