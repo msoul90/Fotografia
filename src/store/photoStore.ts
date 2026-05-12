@@ -224,7 +224,20 @@ export const usePhotoStore = create<PhotoOsState>((set, get) => ({
   saveProfile: async (profile) => {
     await HardwareService.save(profile);
     const profiles = await HardwareService.getAll();
-    set({ availableProfiles: profiles });
+    const { activeProfile } = get();
+
+    // Si el perfil guardado es el que está activo, lo refrescamos en memoria
+    // y recalculamos la física para que el nuevo lente aparezca y sea usable.
+    if (activeProfile.id === profile.id) {
+      const snapshot = computeSnapshot(profile);
+      set({
+        availableProfiles: profiles,
+        activeProfile: profile,
+        physicsSnapshot: snapshot,
+      });
+    } else {
+      set({ availableProfiles: profiles });
+    }
   },
 
   deleteProfile: async (id) => {
