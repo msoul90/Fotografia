@@ -50,41 +50,89 @@ npx serve out/
 El archivo `.github/workflows/deploy.yml` automatiza todo el pipeline:
 
 ```
-git push origin main  →  GitHub Actions  →  npm ci  →  npm run build  →  out/ → gh-pages branch
+push → main
+  ├─ npm ci
+  ├─ npm run build          →  out/index.html  (Next.js static export)
+  ├─ Pre-flight check       →  valida que out/index.html exista
+  ├─ Escribe out/404.html   →  SPA redirect script
+  ├─ touch out/.nojekyll    →  protege _next/ de Jekyll
+  └─ peaceiris → gh-pages   →  publica SOLO out/, no el código fuente
 ```
 
-**No necesitas hacer nada manualmente.** Cada push a `main` despliega en minutos.
+---
 
-### ⚠️ Configuración Obligatoria de Permisos (una sola vez)
+### 🔴 Síntoma: Veo el README.md en lugar de la app
 
-> Si el workflow falla con **HTTP 403 - Permission denied**, sigue estos pasos.
-> El `GITHUB_TOKEN` por defecto es solo-lectura; hay que habilitarle escritura.
+**Causa raíz:** GitHub Pages está leyendo la rama `main` (que contiene el código fuente) en lugar de la rama `gh-pages` (que contiene el build compilado).
 
-**Paso 1 — Permisos del workflow:**
+**Solución en 3 pasos — en este orden exacto:**
 
-1. Ve a tu repositorio → **Settings → Actions → General**
-2. Baja hasta la sección **"Workflow permissions"**
-3. Selecciona **"Read and write permissions"** *(en lugar de "Read repository contents")*
-4. Marca ✅ **"Allow GitHub Actions to create and approve pull requests"**
-5. Clic en **Save**
+#### Paso 1 — Permisos del workflow (una sola vez)
 
-**Paso 2 — Configurar GitHub Pages:**
+1. Repositorio → **Settings → Actions → General**
+2. Sección **"Workflow permissions"** → selecciona **"Read and write permissions"**
+3. Marca ✅ **"Allow GitHub Actions to create and approve pull requests"**
+4. **Save**
 
-1. Ve a **Settings → Pages**
-2. En **"Build and deployment"** selecciona **"Deploy from a branch"**
-3. Branch: **`gh-pages`** / Folder: **`/ (root)`**
-4. Guarda — la primera URL tarda ~2 minutos en activarse
+#### Paso 2 — Ejecutar el workflow para crear la rama `gh-pages`
 
-> **¿Por qué es necesario?** El workflow YAML ya incluye `permissions: contents: write`,
-> pero GitHub también requiere que el ajuste esté habilitado a nivel de repositorio.
-> Ambas configuraciones deben estar activas simultáneamente.
+La rama `gh-pages` no existe hasta que el workflow corre por primera vez.
+
+```bash
+# Opción A: haz cualquier push a main
+git commit --allow-empty -m "trigger: create gh-pages branch"
+git push origin main
+
+# Opción B: ejecútalo manualmente desde la UI
+# GitHub → Actions → "Deploy PHOTO_OS to GitHub Pages" → Run workflow
+```
+
+Espera a que el workflow termine (ícono ✅ verde en la pestaña Actions).
+
+#### Paso 3 — Apuntar GitHub Pages a la rama correcta
+
+> ⚠️ **Este es el paso que causa el síntoma.** Si Pages apunta a `main`, verás el README.
+
+1. Repositorio → **Settings → Pages**
+2. En **"Build and deployment"**:
+   - Source: **Deploy from a branch**
+   - Branch: **`gh-pages`** ← *no `main`*
+   - Folder: **`/ (root)`**
+3. **Save**
+4. Espera 1-2 minutos → recarga la URL
+
+---
+
+### 🔍 Verificación rápida
+
+Para confirmar que `gh-pages` contiene el build y no el código fuente:
+
+```bash
+# Inspecciona la rama gh-pages localmente
+git fetch origin gh-pages
+git show origin/gh-pages:index.html | head -5
+# Debes ver: <!DOCTYPE html>... NO un README
+```
+
+O en GitHub: ve a la pestaña **Code** → cambia la rama a `gh-pages` → verifica que hay `index.html`, `_next/`, `.nojekyll` y **no** hay `src/`, `package.json` ni `README.md`.
+
+---
+
+### 🟡 Síntoma: Error 403 en el workflow
+
+> El `GITHUB_TOKEN` por defecto es solo-lectura.
+
+El workflow ya incluye `permissions: contents: write` en el YAML.
+Además, sigue el **Paso 1** de arriba (Settings → Actions → General → Read and write).
+**Ambas configuraciones deben estar activas.**
+
+---
 
 ### Agregar Secrets (para AI Critic real)
 
-1. GitHub → **Settings → Secrets and variables → Actions**
-2. Clic en **"New repository secret"**
-3. Name: `NEXT_PUBLIC_AI_ENDPOINT` · Value: tu URL de LLM
-4. El workflow ya lo inyecta en el paso de build automáticamente.
+1. **Settings → Secrets and variables → Actions → New repository secret**
+2. Name: `NEXT_PUBLIC_AI_ENDPOINT` · Value: tu URL de LLM
+
 
 ---
 

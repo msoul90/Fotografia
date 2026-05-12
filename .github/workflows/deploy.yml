@@ -44,15 +44,41 @@ jobs:
 
       # ── 4. Build static export ─────────────────────────────────────────────
       # NODE_ENV=production activates basePath + assetPrefix in next.config.ts
+      # Next.js output: "export" writes the static site to ./out/
       - name: Build (next export → out/)
         run: npm run build
         env:
           NODE_ENV: production
-          # Paste your future secrets here — they are injected at build time
-          # so the static bundle can reference them safely.
           NEXT_PUBLIC_AI_ENDPOINT: ${{ secrets.NEXT_PUBLIC_AI_ENDPOINT }}
 
-      # ── 5. SPA 404 fix ─────────────────────────────────────────────────────
+      # ── 5. Pre-flight validation ────────────────────────────────────────────
+      # Abort the deployment early if the build did not produce a valid
+      # out/index.html. This prevents pushing a broken or empty release.
+      # If this step fails, check that `output: "export"` is set in
+      # next.config.ts and that `npm run build` completed without errors.
+      - name: Pre-flight — verify out/index.html exists
+        run: |
+          if [ ! -f "out/index.html" ]; then
+            echo "❌ FATAL: out/index.html not found."
+            echo "   Possible causes:"
+            echo "   1. Build failed silently — check step 4 logs."
+            echo "   2. next.config.ts is missing output: 'export'."
+            echo "   3. Next.js wrote files to a different directory."
+            echo ""
+            echo "   Contents of working directory:"
+            ls -la
+            echo ""
+            echo "   Contents of out/ (if it exists):"
+            ls -la out/ 2>/dev/null || echo "   out/ directory does not exist."
+            exit 1
+          fi
+          echo "✅ out/index.html found — build output verified."
+          echo "   Build artifact sizes:"
+          du -sh out/
+          echo "   Files in out/:"
+          ls -lh out/
+
+      # ── 6. SPA 404 fix ─────────────────────────────────────────────────────
       # GitHub Pages returns this 404 page on any URL it doesn't recognise.
       # We overwrite it with a redirect script that converts the path back into
       # a query-string so the Next.js client-side router can handle it.
@@ -83,20 +109,29 @@ jobs:
           </html>
           EOF
 
-      # ── 6. Add .nojekyll ───────────────────────────────────────────────────
+      # ── 7. Add .nojekyll ───────────────────────────────────────────────────
       # Prevents GitHub Pages' Jekyll processor from stripping files and
       # folders that start with an underscore (Next.js uses _next/).
       - name: Add .nojekyll
         run: touch out/.nojekyll
 
-      # ── 7. Deploy to gh-pages branch ───────────────────────────────────────
+      # ── 8. Deploy to gh-pages branch ───────────────────────────────────────
+      # peaceiris/actions-gh-pages pushes ONLY the contents of publish_dir
+      # (./out) to the gh-pages branch using force_orphan: true — meaning
+      # the gh-pages branch only ever contains the compiled app, never
+      # source files like README.md, package.json, or src/.
+      #
+      # If you see README.md on GitHub Pages, the "Source" in
+      # Settings → Pages is pointing to the main branch, not gh-pages.
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # This MUST match where next build writes its output.
+          # Next.js with output:"export" always uses ./out
           publish_dir: ./out
           publish_branch: gh-pages
-          # Keep previous deployments' commit history clean
+          # force_orphan: the gh-pages branch is always a single commit
+          # containing ONLY the build output — no source history.
           force_orphan: true
-          # Commit message shown in gh-pages branch
           commit_message: "deploy: ${{ github.sha }}"
