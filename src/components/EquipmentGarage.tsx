@@ -214,9 +214,84 @@ export function EquipmentGarage() {
     availableKits,
     setActiveProfile,
     activateKit,
+    saveProfile,
   } = usePhotoStore();
 
   const { themeAccent } = useHardware();
+  const [isAdding, setIsAdding] = useState(false);
+
+  // Form State
+  const [newKind, setNewKind] = useState<"OpticalCamera" | "SmartDevice">("OpticalCamera");
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+
+  const handleSave = async () => {
+    if (!brand || !model) return;
+
+    const id = `hw-${Date.now()}`;
+    let profile: HardwareProfile;
+
+    if (newKind === "OpticalCamera") {
+      profile = {
+        kind: "OpticalCamera",
+        id,
+        brand,
+        model,
+        sensorSize: "APS-C", // Default
+        cropFactor: 1.5,
+        mountType: "Generic",
+        mechanicalShutterMaxSec: 1 / 4000,
+        bodyStabilization: "None",
+        isoMin: 100,
+        isoMax: 25600,
+        lenses: [
+          {
+            kind: "Prime",
+            id: `${id}-lens-1`,
+            brand,
+            name: "Lente Kit 35mm",
+            focalLengthMm: 35,
+            maxAperture: 1.8,
+            stabilization: "None",
+            mountType: "Generic",
+          },
+        ],
+        activeLensId: `${id}-lens-1`,
+        isComputational: false,
+      };
+    } else {
+      profile = {
+        kind: "SmartDevice",
+        id,
+        brand,
+        model,
+        sensorSize: "Smartphone",
+        sensorArray: [
+          {
+            id: `${id}-s1`,
+            name: "Main",
+            focalLengthReal: 6.5,
+            focalLengthEquivalent: 24,
+            aperture: 1.8,
+            zoomMultiplier: 1,
+            stabilization: "OIS",
+            megapixels: 12,
+            supportsNightMode: true,
+          },
+        ],
+        activeLensId: `${id}-s1`,
+        isComputational: true,
+        supportsPortraitMode: true,
+        supportsNightography: true,
+        supportsAstroMode: false,
+      };
+    }
+
+    await saveProfile(profile);
+    setIsAdding(false);
+    setBrand("");
+    setModel("");
+  };
 
   return (
     <AnimatePresence>
@@ -228,7 +303,10 @@ export function EquipmentGarage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md"
-            onClick={() => setGarageOpen(false)}
+            onClick={() => {
+              setGarageOpen(false);
+              setIsAdding(false);
+            }}
           />
 
           {/* Panel */}
@@ -248,7 +326,10 @@ export function EquipmentGarage() {
                 <h2 className="text-sm font-black text-white">Garage de Equipo</h2>
               </div>
               <button
-                onClick={() => setGarageOpen(false)}
+                onClick={() => {
+                  setGarageOpen(false);
+                  setIsAdding(false);
+                }}
                 className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-800 hover:text-white transition-colors"
               >
                 <X className="h-4 w-4" />
@@ -257,48 +338,124 @@ export function EquipmentGarage() {
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto space-y-6 p-5">
-              {/* Profiles */}
-              <div>
-                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Perfiles de Hardware
-                </p>
-                <div className="space-y-2">
-                  {availableProfiles.map((profile) => (
-                    <ProfileCard
-                      key={profile.id}
-                      profile={profile}
-                      isActive={activeProfile.id === profile.id}
-                      onSelect={() => setActiveProfile(profile)}
-                    />
-                  ))}
-                </div>
-              </div>
+              {isAdding ? (
+                /* Add Form */
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      Nuevo Hardware
+                    </p>
+                    <button
+                      onClick={() => setIsAdding(false)}
+                      className="text-[10px] font-bold text-zinc-400 hover:text-white"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
 
-              {/* Lens selector */}
-              <div>
-                {isOpticalCamera(activeProfile) ? (
-                  <LensSelector profile={activeProfile} />
-                ) : isSmartDevice(activeProfile) ? (
-                  <SmartLensSelector profile={activeProfile} />
-                ) : null}
-              </div>
+                  <div className="flex gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 p-1">
+                    <button
+                      onClick={() => setNewKind("OpticalCamera")}
+                      className={`flex-1 rounded-lg py-2 text-[10px] font-black uppercase ${
+                        newKind === "OpticalCamera" ? "bg-blue-600 text-white" : "text-zinc-500"
+                      }`}
+                    >
+                      Cámara
+                    </button>
+                    <button
+                      onClick={() => setNewKind("SmartDevice")}
+                      className={`flex-1 rounded-lg py-2 text-[10px] font-black uppercase ${
+                        newKind === "SmartDevice" ? "bg-purple-600 text-white" : "text-zinc-500"
+                      }`}
+                    >
+                      Smartphone
+                    </button>
+                  </div>
 
-              {/* Kits */}
-              <div>
-                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Kits de Equipo
-                </p>
-                <div className="space-y-2">
-                  {availableKits.map((kit) => (
-                    <KitCard
-                      key={kit.id}
-                      kit={kit}
-                      isActive={activeKit?.id === kit.id}
-                      onActivate={() => activateKit(kit)}
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Marca (ej. Canon)"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-white placeholder:text-zinc-600 focus:border-blue-500 outline-none"
                     />
-                  ))}
-                </div>
-              </div>
+                    <input
+                      type="text"
+                      placeholder="Modelo (ej. EOS R50)"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-white placeholder:text-zinc-600 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSave}
+                    disabled={!brand || !model}
+                    className="w-full rounded-xl bg-white py-3 text-xs font-black uppercase tracking-widest text-black hover:bg-zinc-200 disabled:opacity-50"
+                  >
+                    Guardar Perfil
+                  </button>
+                </motion.div>
+              ) : (
+                /* Normal List View */
+                <>
+                  {/* Profiles */}
+                  <div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                        Perfiles de Hardware
+                      </p>
+                      <button
+                        onClick={() => setIsAdding(true)}
+                        className="flex items-center gap-1 rounded-lg bg-zinc-800 px-2 py-1 text-[9px] font-black text-white hover:bg-zinc-700"
+                      >
+                        + Nuevo Equipo
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {availableProfiles.map((profile) => (
+                        <ProfileCard
+                          key={profile.id}
+                          profile={profile}
+                          isActive={activeProfile.id === profile.id}
+                          onSelect={() => setActiveProfile(profile)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Lens selector */}
+                  <div>
+                    {isOpticalCamera(activeProfile) ? (
+                      <LensSelector profile={activeProfile} />
+                    ) : isSmartDevice(activeProfile) ? (
+                      <SmartLensSelector profile={activeProfile} />
+                    ) : null}
+                  </div>
+
+                  {/* Kits */}
+                  <div>
+                    <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      Kits de Equipo
+                    </p>
+                    <div className="space-y-2">
+                      {availableKits.map((kit) => (
+                        <KitCard
+                          key={kit.id}
+                          kit={kit}
+                          isActive={activeKit?.id === kit.id}
+                          onActivate={() => activateKit(kit)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </>
