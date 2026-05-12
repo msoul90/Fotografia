@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>PHOTO_OS PRO</title>
+  <script>
+    /**
+     * SPA Routing Fix for GitHub Pages
+     * ─────────────────────────────────
+     * GitHub Pages returns this 404.html for any URL it doesn't recognise.
+     * This script converts the path back into a query-string, then redirects
+     * to the site root so the Next.js router can handle the route client-side.
+     *
+     * Technique by Rafael Pedicini:
+     * https://github.com/rafgraph/spa-github-pages
+     *
+     * How it works:
+     *   /Fotografia/spots/arcos  →  /?p=/spots/arcos
+     *   index.html receives it and the companion script restores the URL.
+     */
+    (function () {
+      var segmentCount = 1; // Number of path segments in basePath (/Fotografia = 1)
+
+      var l = window.location;
+      l.replace(
+        l.protocol +
+          "//" +
+          l.hostname +
+          (l.port ? ":" + l.port : "") +
+          l.pathname
+            .split("/")
+            .slice(0, 1 + segmentCount)
+            .join("/") +
+          "/?p=/" +
+          l.pathname
+            .slice(1)
+            .split("/")
+            .slice(segmentCount)
+            .join("/")
+            .replace(/&/g, "~and~") +
+          (l.search ? "&q=" + l.search.slice(1).replace(/&/g, "~and~") : "") +
+          l.hash
+      );
+    })();
+  </script>
+</head>
+<body>
+  <!-- Redirecting… -->
+</body>
+</html>

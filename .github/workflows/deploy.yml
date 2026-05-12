@@ -1,0 +1,94 @@
+name: Deploy PHOTO_OS to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  # Allow manual runs from the Actions tab
+  workflow_dispatch:
+
+# Only one deployment runs at a time; cancel any in-progress run
+# on a new push so we never deploy stale code.
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js setup ───────────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # ── 3. Install dependencies ────────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Build static export ─────────────────────────────────────────────
+      # NODE_ENV=production activates basePath + assetPrefix in next.config.ts
+      - name: Build (next export → out/)
+        run: npm run build
+        env:
+          NODE_ENV: production
+          # Paste your future secrets here — they are injected at build time
+          # so the static bundle can reference them safely.
+          NEXT_PUBLIC_AI_ENDPOINT: ${{ secrets.NEXT_PUBLIC_AI_ENDPOINT }}
+
+      # ── 5. SPA 404 fix ─────────────────────────────────────────────────────
+      # GitHub Pages returns this 404 page on any URL it doesn't recognise.
+      # We overwrite it with a redirect script that converts the path back into
+      # a query-string so the Next.js client-side router can handle it.
+      # segmentCount=1 matches the /Fotografia basePath prefix.
+      - name: Write SPA redirect into out/404.html
+        run: |
+          cat > out/404.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8" />
+            <title>PHOTO_OS PRO</title>
+            <script>
+              (function () {
+                var segmentCount = 1;
+                var l = window.location;
+                l.replace(
+                  l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+                  l.pathname.split('/').slice(0, 1 + segmentCount).join('/') + '/?p=/' +
+                  l.pathname.slice(1).split('/').slice(segmentCount).join('/').replace(/&/g, '~and~') +
+                  (l.search ? '&q=' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+                  l.hash
+                );
+              })();
+            </script>
+          </head>
+          <body></body>
+          </html>
+          EOF
+
+      # ── 6. Add .nojekyll ───────────────────────────────────────────────────
+      # Prevents GitHub Pages' Jekyll processor from stripping files and
+      # folders that start with an underscore (Next.js uses _next/).
+      - name: Add .nojekyll
+        run: touch out/.nojekyll
+
+      # ── 7. Deploy to gh-pages branch ───────────────────────────────────────
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          publish_branch: gh-pages
+          # Keep previous deployments' commit history clean
+          force_orphan: true
+          # Commit message shown in gh-pages branch
+          commit_message: "deploy: ${{ github.sha }}"
