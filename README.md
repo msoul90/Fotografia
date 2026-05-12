@@ -55,12 +55,29 @@ git push origin main  →  GitHub Actions  →  npm ci  →  npm run build  → 
 
 **No necesitas hacer nada manualmente.** Cada push a `main` despliega en minutos.
 
-### Configurar GitHub Pages (primera vez)
+### ⚠️ Configuración Obligatoria de Permisos (una sola vez)
 
-1. Ve a tu repositorio en GitHub → **Settings → Pages**
-2. En **"Build and deployment"**, selecciona **"Deploy from a branch"**
+> Si el workflow falla con **HTTP 403 - Permission denied**, sigue estos pasos.
+> El `GITHUB_TOKEN` por defecto es solo-lectura; hay que habilitarle escritura.
+
+**Paso 1 — Permisos del workflow:**
+
+1. Ve a tu repositorio → **Settings → Actions → General**
+2. Baja hasta la sección **"Workflow permissions"**
+3. Selecciona **"Read and write permissions"** *(en lugar de "Read repository contents")*
+4. Marca ✅ **"Allow GitHub Actions to create and approve pull requests"**
+5. Clic en **Save**
+
+**Paso 2 — Configurar GitHub Pages:**
+
+1. Ve a **Settings → Pages**
+2. En **"Build and deployment"** selecciona **"Deploy from a branch"**
 3. Branch: **`gh-pages`** / Folder: **`/ (root)`**
-4. Guarda. La primera URL tardará ~2 minutos en activarse.
+4. Guarda — la primera URL tarda ~2 minutos en activarse
+
+> **¿Por qué es necesario?** El workflow YAML ya incluye `permissions: contents: write`,
+> pero GitHub también requiere que el ajuste esté habilitado a nivel de repositorio.
+> Ambas configuraciones deben estar activas simultáneamente.
 
 ### Agregar Secrets (para AI Critic real)
 

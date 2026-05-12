@@ -18,6 +18,14 @@ jobs:
     name: Build & Deploy
     runs-on: ubuntu-latest
 
+    # ── Permissions ──────────────────────────────────────────────────────────
+    # Without `contents: write` the default GITHUB_TOKEN is read-only and
+    # peaceiris/actions-gh-pages will fail with HTTP 403 when pushing to
+    # the gh-pages branch.
+    permissions:
+      contents: write   # push to gh-pages
+      actions: read     # read workflow metadata (checkout, cache)
+
     steps:
       # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout source
